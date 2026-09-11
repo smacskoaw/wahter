@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الأدمن | قطر واحة</title>
+<style>
+  :root{--pink-bg:#f7e8ef;--purple:#7a1f5c;--purple-dark:#5a1544;--white:#fff;--border:#ead5e1;--muted:#6c6470;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--pink-bg);color:#302b30;font-family:"Tahoma","Segoe UI",Arial,sans-serif;}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 5%;background:var(--white);border-bottom:1px solid var(--border);}
+  header h1{margin:0;color:var(--purple-dark);font-size:24px;}
+  header a{color:var(--purple);text-decoration:none;font-size:14px;}
+  main{width:min(1400px,90%);margin:28px auto 60px;}
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px;}
+  .summary-card,.booking-card{background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+  .summary-card{padding:18px;}
+  .summary-card span{display:block;color:var(--muted);font-size:13px;margin-bottom:8px;}
+  .summary-card strong{color:var(--purple-dark);font-size:26px;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;}
+  .toolbar h2{margin:0;color:var(--purple-dark);font-size:21px;}
+  .toolbar-actions{display:flex;gap:8px;}
+  .toolbar button,.delete-card-btn{border:0;border-radius:20px;padding:9px 16px;background:var(--purple);color:#fff;cursor:pointer;font:inherit;}
+  .toolbar .delete-all-btn,.delete-card-btn{background:#a52c51;}
+  .toolbar button:hover,.delete-card-btn:hover{filter:brightness(.92);}
+  .bookings{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;}
+  .booking-card{padding:20px;}
+  .booking-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;}
+  .booking-top h3{margin:0;color:var(--text-blue,#1e4a8a);font-size:17px;}
+  .status{padding:5px 10px;border-radius:14px;background:#f1d9e8;color:var(--purple-dark);font-size:11px;white-space:nowrap;}
+  .form-section{padding:15px;margin-top:14px;border:1px solid var(--border);border-radius:10px;background:#fffafd;}
+  .form-section h4{margin:0 0 12px;color:var(--purple-dark);font-size:14px;}
+  dl{display:grid;grid-template-columns:105px 1fr;gap:9px 12px;margin:0;font-size:13px;}
+  dt{color:var(--muted);font-weight:bold;}
+  dd{margin:0;overflow-wrap:anywhere;}
+  .empty{text-align:center;padding:45px 20px;background:var(--white);border-radius:12px;color:var(--muted);}
+  .delete-card-btn{display:block;margin:18px 0 0 auto;padding:8px 15px;font-size:13px;}
+  @media(max-width:650px){.summary{grid-template-columns:1fr;}.toolbar{align-items:flex-start;flex-direction:column;}header{padding:16px 5%;}}
+</style>
+</head>
+<body>
+  <header>
+    <h1>لوحة الحجوزات</h1>
+    <a href="../index.html">العودة للمنتجات</a>
+  </header>
+  <main>
+    <section class="summary" aria-label="ملخص الحجوزات">
+      <div class="summary-card"><span>إجمالي الطلبات</span><strong id="total-count">0</strong></div>
+      <div class="summary-card"><span>الطلبات المكتملة</span><strong id="complete-count">0</strong></div>
+      <div class="summary-card"><span>طلبات قيد المتابعة</span><strong id="pending-count">0</strong></div>
+    </section>
+    <div class="toolbar">
+      <h2>كل الحجوزات والبيانات</h2>
+      <div class="toolbar-actions">
+        <button type="button" id="refresh">تحديث البيانات</button>
+        <button type="button" class="delete-all-btn" id="delete-all">مسح جميع الحجوزات</button>
+      </div>
+    </div>
+    <section class="bookings" id="bookings" aria-live="polite"></section>
+  </main>
+
+<script>
+  const bookingsContainer = document.querySelector('#bookings');
+  const escapeHtml = value=>String(value ?? '').replace(/[&<>'"]/g, character=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[character]));
+  const formatDate = value=>value ? new Date(value).toLocaleString('ar-QA') : '-';
+
+  function renderBookings(){
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]').reverse();
+    const completeCount = bookings.filter(booking=>booking.status === 'مكتمل').length;
+    document.querySelector('#total-count').textContent = bookings.length;
+    document.querySelector('#complete-count').textContent = completeCount;
+    document.querySelector('#pending-count').textContent = bookings.length - completeCount;
+    if(!bookings.length){
+      bookingsContainer.innerHTML = '<p class="empty">لا توجد حجوزات حتى الآن.</p>';
+      return;
+    }
+    bookingsContainer.innerHTML = bookings.map((booking,index)=>`<article class="booking-card">
+      <div class="booking-top"><h3>طلب #${bookings.length - index}</h3><span class="status">${escapeHtml(booking.status || 'غير محدد')}</span></div>
+      <section class="form-section">
+        <h4>الفورم الأول: بيانات العميل والطلب</h4>
+        <dl>
+          <dt>الاسم</dt><dd>${escapeHtml(booking.name || '-')}</dd>
+          <dt>الهاتف الأول</dt><dd>${escapeHtml(booking.phone || '-')}</dd>
+          <dt>المنتج</dt><dd>${escapeHtml(booking.product || '-')}</dd>
+          <dt>الكمية</dt><dd>${escapeHtml(booking.quantity || '-')}</dd>
+          <dt>الإجمالي</dt><dd>${escapeHtml(booking.total || '-')}</dd>
+          <dt>المدينة</dt><dd>${escapeHtml(booking.city || '-')}</dd>
+          <dt>الحي</dt><dd>${escapeHtml(booking.area || '-')}</dd>
+          <dt>العنوان</dt><dd>${escapeHtml(booking.address || '-')}</dd>
+        </dl>
+      </section>
+      <section class="form-section">
+        <h4>الفورم الثاني: بيانات التأكيد والتوصيل</h4>
+        <dl>
+          <dt>الاسم الثاني</dt><dd>${escapeHtml(booking.nameSecond || '-')}</dd>
+          <dt>الهاتف الثاني</dt><dd>${escapeHtml(booking.phoneSecond || '-')}</dd>
+          <dt>الشهر</dt><dd>${escapeHtml(booking.deliveryMonth || '-')}</dd>
+          <dt>السنة</dt><dd>${escapeHtml(booking.deliveryYear || '-')}</dd>
+          <dt>رقم الطلب</dt><dd>${escapeHtml(booking.orderNumber || '-')}</dd>
+        </dl>
+      </section>
+      <section class="form-section">
+        <h4>الفورم الأخير: تأكيد رقم الطلب</h4>
+        <dl>
+          <dt>رقم التأكيد النهائي</dt><dd>${escapeHtml(booking.confirmationNumberFinal || '-')}</dd>
+          <dt>وقت الإدخال</dt><dd>${formatDate(booking.createdAt)}</dd>
+          <dt>وقت الإكمال</dt><dd>${formatDate(booking.completedAt)}</dd>
+        </dl>
+      </section>
+      <button class="delete-card-btn" type="button" data-booking-id="${escapeHtml(booking.bookingId)}">مسح هذا الكرت</button>
+    </article>`).join('');
+    bookingsContainer.querySelectorAll('.delete-card-btn').forEach(button=>{
+      button.addEventListener('click', ()=>{
+        if(!confirm('هل تريد مسح هذا الحجز؟')){return;}
+        const remainingBookings = JSON.parse(localStorage.getItem('bookings') || '[]')
+          .filter(booking=>booking.bookingId !== button.dataset.bookingId);
+        localStorage.setItem('bookings', JSON.stringify(remainingBookings));
+        renderBookings();
+      });
+    });
+  }
+
+  document.querySelector('#refresh').addEventListener('click', renderBookings);
+  document.querySelector('#delete-all').addEventListener('click', ()=>{
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    if(!bookings.length){return;}
+    if(!confirm('هل تريد مسح جميع الحجوزات؟ لا يمكن التراجع عن هذا الإجراء.')){return;}
+    localStorage.removeItem('bookings');
+    renderBookings();
+  });
+  window.addEventListener('storage', renderBookings);
+  renderBookings();
+</script>
+</body>
+</html>
